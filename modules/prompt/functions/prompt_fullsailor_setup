@@ -1,0 +1,72 @@
+# A custom theme just for me!
+#
+# Author:
+#   Andrew Smith <fullsailor@me.com>
+#
+# Example:
+#   |5:00:23| username at hostname in ~/path on branch
+
+
+function time_info {
+  echo "%F{none}|%F{green}%*%F{none}|%f"      
+}
+
+function user_info {
+  echo "%F{blue}%n%f"
+}
+
+function host_info {
+  echo "%F{yellow}%m%f"
+}
+
+function path_info {
+  echo "%F{cyan}%2~%f"
+}
+
+# My home directory is a git repo of my dotfiles. I do not want my prompt to lie
+# and say that isn't
+function is_git_dir {
+  [[ $(pwd) != $HOME ]] && [[ -d "./.git" ]]
+}
+function prompt_char {
+  is_git_dir && echo '±' && return
+  echo '○'
+}
+
+function git_info {
+  is_git_dir && echo $git_prompt_info
+}
+
+function prompt_fullsailor_precmd () {
+  setopt LOCAL_OPTIONS
+  unsetopt XTRACE KSH_ARRAYS
+
+  if (( $+functions[git-info] )); then
+    git-info # refresh git info
+  fi
+  print -rP $'$(time_info) $(user_info) at $(host_info) in $(path_info) ${git_info[prompt]}' 
+}
+
+function prompt_fullsailor_setup() {
+  setopt LOCAL_OPTIONS
+  unsetopt XTRACE KSH_ARRAYS
+  prompt_opts=(cr percent subst)
+
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd prompt_fullsailor_precmd
+
+  # For Vi mode
+  zstyle ':omz:prompt' vicmd '%F{yellow}❮%f%B%F{red}❮%f%b%F{red}❮%f'
+
+  zstyle ':omz:module:git' info \
+         'prompt' 'on %b%A%B%D'\
+         'rprompt' ''
+  zstyle ':omz:module:git' branch '%F{magenta}%b%f'
+  zstyle ':omz:module:git' ahead '%F{yellow}↑%f'
+  zstyle ':omz:module:git' behind '%F{yellow}↓%f%'
+  zstyle ':omz:module:git' dirty '%F{red}ϟ%f'
+
+  PROMPT='$(prompt_char) ' 
+}
+
+prompt_fullsailor_setup "$@"
